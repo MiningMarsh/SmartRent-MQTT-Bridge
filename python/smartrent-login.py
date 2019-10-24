@@ -3,7 +3,7 @@ from selenium import webdriver
 import asyncio
 import os, re
 
-smartrent_email = os.environ.get('SMARTRENT_EMAIL')      
+smartrent_email = os.environ.get('SMARTRENT_EMAIL')
 smartrent_password = os.environ.get('SMARTRENT_PASSWORD')
 
 user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36'
@@ -35,13 +35,16 @@ def login():
     driver.get('https://control.smartrent.com/login/?')
     print("Navigated to SmartRent login page")
     time.sleep(3)
-    email_box = driver.find_element_by_name('session[email]')
-    password_box = driver.find_element_by_name('session[password]')
-    # Enter login credentials
+    email_box = driver.find_element_by_css_selector('input[type="email"]')
     email_box.send_keys(smartrent_email)
+    email_box.submit()
+
+    driver.implicitly_wait(5)
+
+    password_box = driver.find_element_by_css_selector('input[type="password"]')
     password_box.send_keys(smartrent_password)
-    # Login
     password_box.submit()
+
     print("Logged In")
     time.sleep(3)
     driver.get('https://control.smartrent.com/resident')
