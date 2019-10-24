@@ -1,2 +1,2 @@
 *.env
-smartrent.env
+.DS_Store

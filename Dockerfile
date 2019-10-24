@@ -3,11 +3,11 @@ FROM selenium/standalone-chrome-debug
 USER root
 
 RUN apt-get update && apt-get upgrade -y && apt-get install -y \
-	build-essential python-dev python-setuptools python-pip python-smbus \
-	libncursesw5-dev libgdbm-dev libc6-dev \
-	zlib1g-dev libsqlite3-dev tk-dev \
-	libssl-dev \
-	libffi-dev
+    build-essential python-dev python-setuptools python-pip python-smbus \
+    libncursesw5-dev libgdbm-dev libc6-dev \
+    zlib1g-dev libsqlite3-dev tk-dev \
+    libssl-dev \
+    libffi-dev
 
 RUN cd /opt/ && wget https://www.python.org/ftp/python/3.7.1/Python-3.7.1.tgz
 RUN cd /opt/ && tar -xzf Python-3.7.1.tgz
