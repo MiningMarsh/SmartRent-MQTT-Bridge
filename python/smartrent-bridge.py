@@ -54,8 +54,8 @@ class SmartRentBridge:
         for key, value in devices.items():
             topics[value[1]] = [key, value[2]]
             if value[2] == "thermostat":
-                mqtt_client.subscribe(MQTT_TOPIC_PREFIX+'/'+value[1]+'/target/cool')
-                mqtt_client.subscribe(MQTT_TOPIC_PREFIX+'/'+value[1]+'/target/heat')
+                mqtt_client.subscribe(MQTT_TOPIC_PREFIX+'/'+value[1]+'/target/cool/set')
+                mqtt_client.subscribe(MQTT_TOPIC_PREFIX+'/'+value[1]+'/target/heat/set')
             if value[2] == "lock":
                 mqtt_client.subscribe(MQTT_TOPIC_PREFIX+'/'+value[1]+'/set')
 
@@ -71,16 +71,18 @@ class SmartRentBridge:
 
     def on_mqtt_message(self, client, userdata, msg):
         global ws_message
+        print('message from:', msg.topic)
         topic = msg.topic.split('/')
         device_id = str(topics[topic[1]][0])
         device_type = topics[topic[1]][1]
-        command = topic[2]
+        command = "/".join(topic[2:len(topic)])
         value = msg.payload.decode().lower()
+        print('message parts:', topic, device_id, device_type, command, value)
         # Handle Thermostat Commands
         if device_type == "thermostat":
-            if command == "/target/heat/set":
+            if command == "target/heat/set":
                 ws_message = '["6","69","devices:'+device_id+'","update_attributes",{"device_id":"'+device_id+'","attributes":[{"name":"mode","value":"heat"},{"name":"heating_setpoint","value":"'+value+'"}]}]'
-            if command == "/target/cool/set":
+            if command == "target/cool/set":
                 ws_message = '["6","69","devices:'+device_id+'","update_attributes",{"device_id":"'+device_id+'","attributes":[{"name":"mode","value":"cool"},{"name":"cooling_setpoint","value":"'+value+'"}]}]'
         # Handle Lock Commands
         if device_type == "lock":
