@@ -33,7 +33,8 @@ attributeToCommandSuffix = {
     "current_temp": "/current/temp",
     "current_humidity": "/current/humidity",
     "locked": "/status",
-    "notifications": "/detail"
+    "notifications": "/detail",
+    "mode": "/current/mode",
 }
 
 def on_mqtt_connect(self, client, userdata, flags, rc):
@@ -97,6 +98,7 @@ class SmartRentBridge:
         print('websocket error')
 
     def parse_message(self, message):
+        try:
         message_json = json.loads(message)
         msg_type = message_json[3]
         msg_data = message_json[4]
@@ -106,11 +108,11 @@ class SmartRentBridge:
             device_id = msg_data['device_id']
             value = msg_data['last_read_state']
             commandSuffix = attributeToCommandSuffix[attribute]
-            try:
                 print("trying to publish", MQTT_TOPIC_PREFIX+'/'+devices[device_id][1]+commandSuffix)
                 mqtt_client.publish(MQTT_TOPIC_PREFIX+'/'+devices[device_id][1]+commandSuffix, value)
             except:
                 print('failed publishing')
+
         return
 
 
