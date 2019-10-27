@@ -86,6 +86,8 @@ class SmartRentBridge:
                 if command == "target/heat/temp/set":
                     ws_message = '["6","69","devices:'+device_id+'","update_attributes",{"device_id":"'+device_id+'","attributes":[{"name":"heating_setpoint","value":"'+value+'"}]}]'
                 if command == "mode/set":
+                    if value == "heat_cool":
+                        value = "auto"
                     ws_message = '["6","69","devices:'+device_id+'","update_attributes",{"device_id":"'+device_id+'","attributes":[{"name":"mode","value":"'+value+'"}]}]'
         # Handle Lock Commands
         if device_type == "lock":
@@ -113,6 +115,9 @@ class SmartRentBridge:
             attribute = msg_data['name']
             device_id = msg_data['device_id']
             value = msg_data['last_read_state']
+                if value == "auto":
+                    value = "heat_cool"
+
             commandSuffix = attributeToCommandSuffix[attribute]
                 print("trying to publish to mqtt", MQTT_TOPIC_PREFIX+'/'+devices[device_id][1]+commandSuffix)
                 mqtt_client.publish(MQTT_TOPIC_PREFIX+'/'+devices[device_id][1]+commandSuffix, value)
