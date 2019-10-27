@@ -47,14 +47,16 @@ You will likely need to edit the `devices` variable in `smartrent-bridge.py` to 
 
 #### Thermostat Topics
 
-| MQTT Topic                                               | Purpose                                                    |    Values    |
-| -------------------------------------------------------- | :--------------------------------------------------------- | :----------: |
-| <MQTT_TOPIC_PREFIX>/<device_mqtt_topic>/target/temp      | The current target temperature                             |   Integer    |
-| <MQTT_TOPIC_PREFIX>/<device_mqtt_topic>/target/heat/set  | Set the the desired target temperature (sets to heat mode) |   Integer    |
-| <MQTT_TOPIC_PREFIX>/<device_mqtt_topic>/target/cool/set  | Set the the desired target temperature (sets to cool mode) |   Integer    |
-| <MQTT_TOPIC_PREFIX>/<device_mqtt_topic>/current/temp     | The actual temperature                                     |   Integer    |
-| <MQTT_TOPIC_PREFIX>/<device_mqtt_topic>/current/humidity | The current humidity                                       |   Integer    |
-| <MQTT_TOPIC_PREFIX>/<device_mqtt_topic>/mode             | The curent operation mode                                  | "off","heat" |
+| MQTT Topic                                                   | Purpose                                     |    Values    |
+| ------------------------------------------------------------ | :------------------------------------------ | :----------: |
+| <MQTT_TOPIC_PREFIX>/<device_mqtt_topic>/target/cool/temp     | The current target temperature              |   Integer    |
+| <MQTT_TOPIC_PREFIX>/<device_mqtt_topic>/target/heat/temp     | The current target temperature              |   Integer    |
+| <MQTT_TOPIC_PREFIX>/<device_mqtt_topic>/target/cool/temp/set | Set the the desired target cool temperature |   Integer    |
+| <MQTT_TOPIC_PREFIX>/<device_mqtt_topic>/target/heat/temp/set | Set the the desired target heat temperature |   Integer    |
+| <MQTT_TOPIC_PREFIX>/<device_mqtt_topic>/current/temp         | The actual temperature                      |   Integer    |
+| <MQTT_TOPIC_PREFIX>/<device_mqtt_topic>/current/humidity     | The current humidity                        |   Integer    |
+| <MQTT_TOPIC_PREFIX>/<device_mqtt_topic>/mode                 | The current operation mode                  | "off","heat" |
+| <MQTT_TOPIC_PREFIX>/<device_mqtt_topic>/mode/set             | Set current operation mode                  | "off","heat" |
 
 #### Lock Topics
 

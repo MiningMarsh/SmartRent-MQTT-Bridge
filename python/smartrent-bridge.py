@@ -28,8 +28,8 @@ topics = {}
 ws_message = ''
 
 attributeToCommandSuffix = {
-    "heating_setpoint": "/target/temp",
-    "cooling_setpoint": "/target/temp",
+    "cooling_setpoint": "/target/cool/temp",
+    "heating_setpoint": "/target/heat/temp",
     "current_temp": "/current/temp",
     "current_humidity": "/current/humidity",
     "locked": "/status",
@@ -54,8 +54,9 @@ class SmartRentBridge:
         for key, value in devices.items():
             topics[value[1]] = [key, value[2]]
             if value[2] == "thermostat":
-                mqtt_client.subscribe(MQTT_TOPIC_PREFIX+'/'+value[1]+'/target/cool/set')
-                mqtt_client.subscribe(MQTT_TOPIC_PREFIX+'/'+value[1]+'/target/heat/set')
+                mqtt_client.subscribe(MQTT_TOPIC_PREFIX+'/'+value[1]+'/target/cool/temp/set')
+                mqtt_client.subscribe(MQTT_TOPIC_PREFIX+'/'+value[1]+'/target/heat/temp/set')
+                mqtt_client.subscribe(MQTT_TOPIC_PREFIX+'/'+value[1]+'/mode/set')
             if value[2] == "lock":
                 mqtt_client.subscribe(MQTT_TOPIC_PREFIX+'/'+value[1]+'/set')
 
@@ -64,7 +65,7 @@ class SmartRentBridge:
         while not flow.ended and not flow.error:
             if len(ws_message) > 0 :
                flow.inject_message(flow.server_conn, str(ws_message))
-               print(ws_message)
+               print('publishing to websocket', ws_message)
                ws_message = ''
 
             await asyncio.sleep(2)
@@ -72,21 +73,25 @@ class SmartRentBridge:
     def on_mqtt_message(self, client, userdata, msg):
         global ws_message
         print('message from:', msg.topic)
+        try:
         topic = msg.topic.split('/')
         device_id = str(topics[topic[1]][0])
         device_type = topics[topic[1]][1]
         command = "/".join(topic[2:len(topic)])
         value = msg.payload.decode().lower()
-        print('message parts:', topic, device_id, device_type, command, value)
         # Handle Thermostat Commands
         if device_type == "thermostat":
-            if command == "target/heat/set":
-                ws_message = '["6","69","devices:'+device_id+'","update_attributes",{"device_id":"'+device_id+'","attributes":[{"name":"mode","value":"heat"},{"name":"heating_setpoint","value":"'+value+'"}]}]'
-            if command == "target/cool/set":
-                ws_message = '["6","69","devices:'+device_id+'","update_attributes",{"device_id":"'+device_id+'","attributes":[{"name":"mode","value":"cool"},{"name":"cooling_setpoint","value":"'+value+'"}]}]'
+                if command == "target/cool/temp/set":
+                    ws_message = '["6","69","devices:'+device_id+'","update_attributes",{"device_id":"'+device_id+'","attributes":[{"name":"cooling_setpoint","value":"'+value+'"}]}]'
+                if command == "target/heat/temp/set":
+                    ws_message = '["6","69","devices:'+device_id+'","update_attributes",{"device_id":"'+device_id+'","attributes":[{"name":"heating_setpoint","value":"'+value+'"}]}]'
+                if command == "mode/set":
+                    ws_message = '["6","69","devices:'+device_id+'","update_attributes",{"device_id":"'+device_id+'","attributes":[{"name":"mode","value":"'+value+'"}]}]'
         # Handle Lock Commands
         if device_type == "lock":
            ws_message = '["null","null","devices:'+device_id+'","update_attributes",{"device_id":"'+device_id+'","attributes":[{"name":"locked","value":"'+value+'"}]}]'
+        except:
+            print('failed publishing to web socket')
 
     #####
     def websocket_start(self, flow):
@@ -105,15 +110,14 @@ class SmartRentBridge:
         msg_type = message_json[3]
         msg_data = message_json[4]
         if msg_type == "attribute_state":
-            print(msg_data)
             attribute = msg_data['name']
             device_id = msg_data['device_id']
             value = msg_data['last_read_state']
             commandSuffix = attributeToCommandSuffix[attribute]
-                print("trying to publish", MQTT_TOPIC_PREFIX+'/'+devices[device_id][1]+commandSuffix)
+                print("trying to publish to mqtt", MQTT_TOPIC_PREFIX+'/'+devices[device_id][1]+commandSuffix)
                 mqtt_client.publish(MQTT_TOPIC_PREFIX+'/'+devices[device_id][1]+commandSuffix, value)
             except:
-                print('failed publishing')
+            print('failed publishing to mqtt')
 
         return
 
