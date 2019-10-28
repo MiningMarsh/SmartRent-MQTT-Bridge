@@ -119,7 +119,7 @@ class SmartRentBridge:
                     value = "heat_cool"
 
             commandSuffix = attributeToCommandSuffix[attribute]
-                print("trying to publish to mqtt", MQTT_TOPIC_PREFIX+'/'+devices[device_id][1]+commandSuffix)
+                print("publishing to mqtt", MQTT_TOPIC_PREFIX+'/'+devices[device_id][1]+commandSuffix, value)
                 mqtt_client.publish(MQTT_TOPIC_PREFIX+'/'+devices[device_id][1]+commandSuffix, value)
             except:
             print('failed publishing to mqtt')
