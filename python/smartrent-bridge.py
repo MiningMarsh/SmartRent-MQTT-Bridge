@@ -8,9 +8,10 @@ import time
 import os
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+import device
 
 #######################################################
-
+#  Edit these:
 devices = {
     # deviceId: ["friendly name", "device_mqtt_topic", "device type"]
     222222: ["Upstairs Thermostat", "upstairs_thermostat", "thermostat"],
@@ -26,6 +27,8 @@ MQTT_TOPIC_PREFIX = os.environ.get('MQTT_TOPIC_PREFIX')
 
 topics = {}
 ws_message = ''
+last_known_device_states = {}
+availableDevices = device.Devices(devices)
 
 attributeToCommandSuffix = {
     "cooling_setpoint": "/target/cool/temp",
@@ -40,13 +43,14 @@ attributeToCommandSuffix = {
 def on_mqtt_connect(self, client, userdata, flags, rc):
         print("Connected to MQTT broker with result code "+str(rc))
 
+def is_auto_mode(mode):
+    return mode == 'auto' or mode == 'heat_cool'
+
 mqtt_client = mqtt.Client()
 mqtt_client.username_pw_set(MQTT_USER, password=MQTT_PASS)
 mqtt_client.on_connect = on_mqtt_connect
 
-
 class SmartRentBridge:
-
     def __init__(self):
         mqtt_client.on_message = self.on_mqtt_message
         mqtt_client.connect(MQTT_HOST, MQTT_PORT, 60)
@@ -64,8 +68,9 @@ class SmartRentBridge:
         global ws_message
         while not flow.ended and not flow.error:
             if len(ws_message) > 0 :
+               print('start publishing to websocket', ws_message)
                flow.inject_message(flow.server_conn, str(ws_message))
-               print('publishing to websocket', ws_message)
+               print('publishing to websocket complete')
                ws_message = ''
 
             await asyncio.sleep(2)
@@ -75,27 +80,22 @@ class SmartRentBridge:
         print('message from:', msg.topic)
         try:
         topic = msg.topic.split('/')
-        device_id = str(topics[topic[1]][0])
-        device_type = topics[topic[1]][1]
+            device_id = topics[topic[1]][0]
         command = "/".join(topic[2:len(topic)])
         value = msg.payload.decode().lower()
-        # Handle Thermostat Commands
-        if device_type == "thermostat":
-                if command == "target/cool/temp/set":
-                    ws_message = '["6","69","devices:'+device_id+'","update_attributes",{"device_id":"'+device_id+'","attributes":[{"name":"cooling_setpoint","value":"'+value+'"}]}]'
-                if command == "target/heat/temp/set":
-                    ws_message = '["6","69","devices:'+device_id+'","update_attributes",{"device_id":"'+device_id+'","attributes":[{"name":"heating_setpoint","value":"'+value+'"}]}]'
-                if command == "mode/set":
-                    if value == "heat_cool":
-                        value = "auto"
-                    ws_message = '["6","69","devices:'+device_id+'","update_attributes",{"device_id":"'+device_id+'","attributes":[{"name":"mode","value":"'+value+'"}]}]'
-        # Handle Lock Commands
-        if device_type == "lock":
-           ws_message = '["null","null","devices:'+device_id+'","update_attributes",{"device_id":"'+device_id+'","attributes":[{"name":"locked","value":"'+value+'"}]}]'
+
+            device = availableDevices.getDevice(device_id)
+            message = device.serializeCommand(command, value)
+            print(message)
+
+            if not message:
+                return
+
+            last_known_device_states[device_id] = device
+            ws_message = message
         except:
             print('failed publishing to web socket')
 
-    #####
     def websocket_start(self, flow):
         asyncio.get_event_loop().create_task(self.inject(flow))
 
@@ -112,15 +112,21 @@ class SmartRentBridge:
         msg_type = message_json[3]
         msg_data = message_json[4]
         if msg_type == "attribute_state":
+                print('update from websocket', message)
+                device_id = msg_data['device_id']
             attribute = msg_data['name']
-            device_id = msg_data['device_id']
             value = msg_data['last_read_state']
-                if value == "auto":
-                    value = "heat_cool"
+                last_known_device_state = last_known_device_states.get(device_id, None)
+                if not last_known_device_state == None:
+                    last_known_device_command = last_known_device_state.getLastCommand()
+                    if not last_known_device_command == None and is_auto_mode(last_known_device_command.value) and type(last_known_device_command).__name__ == 'SetThermostatModeCommand':
+                        print('thermostat mode is auto, so ignoring')
+                        return
 
             commandSuffix = attributeToCommandSuffix[attribute]
                 print("publishing to mqtt", MQTT_TOPIC_PREFIX+'/'+devices[device_id][1]+commandSuffix, value)
                 mqtt_client.publish(MQTT_TOPIC_PREFIX+'/'+devices[device_id][1]+commandSuffix, value)
+                print("publishing to mqtt complete")
             except:
             print('failed publishing to mqtt')
 
