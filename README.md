@@ -70,4 +70,4 @@ You will likely need to edit the `devices` variable in `smartrent-bridge.py` to 
 
 ## Websocket Message Formats
 
-A list of the important WebSocket messages exchanged between the web client and SmartRent's service can be found [here (WIP)](https://github.com/AMcPherran/SmartRent-MQTT-Bridge/blob/master/Message-Formats.md)
+A list of the important WebSocket messages exchanged between the web client and SmartRent's service can be found [here (WIP)](Message-Formats.md)
