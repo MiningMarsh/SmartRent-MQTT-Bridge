@@ -1,5 +1,7 @@
 This software is provided for free to do whatever you want with, I make no guarantees about it. Updated to suit my needs from the [original author's repo](https://github.com/AMcPherran/SmartRent-MQTT-Bridge).
 
+This particular repo is actually forked from [this fork](https://github.com/andrew-codes/SmartRent-MQTT-Bridge) of the above mentioned repo.
+
 ## How it Works:
 
 When the container starts, Chrome is launched headlessly as a Selenium driver and navigates to the SmartRent login page, logs you in, then navigates to the home control page. Chrome is configured to proxy the connection through [mitmproxy](https://mitmproxy.org/) with the `smartrent-bridge.py` script set to manipulate the WebSocket connection. `smartrent-bridge.py` will translate MQTT publications to WebSocket messages and vice-versa.
